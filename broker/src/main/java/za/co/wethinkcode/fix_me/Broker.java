@@ -1,26 +1,34 @@
 package za.co.wethinkcode.fix_me;
 
 import java.net.Socket;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.io.DataOutputStream;
 import java.io.IOException;
+import java.math.BigInteger;
 
-public class App {
+public class Broker {
     public static void main( String[] args ) {
     	try {
     		System.out.println("Attempting connection on port...");
     		Socket clientSocket = new Socket("127.0.0.1", 5000);
-    		BufferedReader fromConsole = new BufferedReader(new InputStreamReader(System.in));
     		BufferedReader fromRouter = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
     		DataOutputStream toRouter = new DataOutputStream(clientSocket.getOutputStream());
     		
-    		String input;
-    		while (true) {
-    			input = fromConsole.readLine();
-    			if (input.toLowerCase().equals("quit"))
-    				break;
-//    			toRouter.writeBytes(input + '\n');
+    		int id = Integer.parseInt(fromRouter.readLine());
+    		
+    		String message = "ID=" + id;
+    		try {    			
+    			MessageDigest md = MessageDigest.getInstance("MD5");
+    			md.update(message.getBytes());
+    			String checksum = new BigInteger(1, md.digest()).toString(16);
+    			message += "|CHK=" + checksum;
+    			System.out.println("Sending message: " + message);
+    			toRouter.writeBytes(message);
+    		} catch (NoSuchAlgorithmException e) {
+    			e.printStackTrace();
     		}
     		fromRouter.close();
     		clientSocket.close();

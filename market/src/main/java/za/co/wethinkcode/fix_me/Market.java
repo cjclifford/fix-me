@@ -6,7 +6,7 @@ import java.io.InputStreamReader;
 import java.io.DataOutputStream;
 import java.io.IOException;
 
-public class App {
+public class Market {
     public static void main( String[] args ) {
     	try {
     		System.out.println("Attempting connection on port...");
