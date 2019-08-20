@@ -32,16 +32,16 @@ public class RoutingTable {
 		this.routingTable.remove(id);
 	}
 	
-	public Socket forward(int id, String message) {
+	public boolean forward(int id, String message) {
 		Socket socket = this.routingTable.get(id);
 		try {
 			DataOutputStream sendTo = new DataOutputStream(socket.getOutputStream());
 			sendTo.writeBytes(message);
 			sendTo.close();
-			return socket;
 		} catch (IOException e) {
 			e.printStackTrace();
+			return false;
 		}
-		return null;
+		return true;
 	}
 }

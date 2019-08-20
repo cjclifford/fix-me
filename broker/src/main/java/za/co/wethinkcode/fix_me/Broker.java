@@ -19,7 +19,7 @@ public class Broker {
     		
     		int id = Integer.parseInt(fromRouter.readLine());
     		
-    		String message = "ID=" + id;
+    		String message = "ID=" + id + "|DST=" + 100000;
     		try {    			
     			MessageDigest md = MessageDigest.getInstance("MD5");
     			md.update(message.getBytes());

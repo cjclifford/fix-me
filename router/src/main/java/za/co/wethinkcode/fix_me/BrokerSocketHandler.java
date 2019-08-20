@@ -11,29 +11,13 @@ import java.util.Map;
 import java.util.HashMap;
 
 public class BrokerSocketHandler extends SocketHandler implements Runnable {
-	BrokerSocketHandler(Socket socket, RoutingTable routingTable, int socketId) {
-		super(socket, routingTable, socketId);
-	}
-
-	private Socket forwardMessage(String message) {
-		String[] tags = message.split("\\|");
-		Map<String, String> tagMap = new HashMap<String, String>();
-
-		System.out.println("Extracting tags...");
-		for (String tag : tags) {
-			System.out.println(tag);
-			String[] tagKV = tag.split("=");
-			tagMap.put(tagKV[0], tagKV[1]);
-		}
-		
-		try {			
-			int marketId = Integer.parseInt(tagMap.get("MKT"));
-			return this.routingTable.forward(marketId, message);
-		} catch (NumberFormatException e) {
-			return null;
-		}
-	}
+	private AMessageResponsibility messageHandler;
 	
+	BrokerSocketHandler(Socket socket, RoutingTable routingTable, int socketId, AMessageResponsibility messageHandler) {
+		super(socket, routingTable, socketId);
+		this.messageHandler = messageHandler;
+	}
+
 	public void run() {
 		System.out.println("Socket connection through port: " + this.socket.getLocalPort());
 		try {
@@ -44,28 +28,10 @@ public class BrokerSocketHandler extends SocketHandler implements Runnable {
 			System.out.println("Waiting for broker message...");
 			String message = fromBroker.readLine();
 			System.out.println("Broker message: " + message);
-			if (this.validateChecksum(message)) {
-				Socket market = this.forwardMessage(message);
-				if (market == null)
-					return;
-				try {
-					BufferedReader fromMarket = new BufferedReader(new InputStreamReader(market.getInputStream()));
-					String response = fromMarket.readLine();
-					if (!this.validateChecksum(response))
-						return;
-					toBroker.writeBytes(response);
-				} catch (IOException e) {
-					e.printStackTrace();
-				}
-			}
-		} catch (SocketException e) {
-			this.closeSocket();
-		} catch (SocketTimeoutException e) {
-			this.closeSocket();
+			FixMessage fixMessage = new FixMessage(message);
+			this.messageHandler.handleRequest(fixMessage);
 		} catch (IOException e) {
 			e.printStackTrace();
-		} finally {
-			this.closeSocket();
 		}
 	}
 }

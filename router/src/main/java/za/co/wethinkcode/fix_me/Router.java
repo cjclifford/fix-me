@@ -10,9 +10,14 @@ public class Router {
 
 	public static void main(String[] args) {
 		RoutingTable routingTable = new RoutingTable();
+		ValidateMessageHandler validateMessageHandler = new ValidateMessageHandler();
+		GetMessageDestinationHandler getMessageDestinationHandler = new GetMessageDestinationHandler();
+		ForwardMessageHandler forwardMessageHandler = new ForwardMessageHandler(routingTable);
+		validateMessageHandler.setNextHandler(getMessageDestinationHandler);
+		getMessageDestinationHandler.setNextHandler(forwardMessageHandler);
 
-		Runnable brokerServerSocketHandler = new ServerSocketHandler(5000, routingTable);
-		Runnable marketServerSocketHandler = new ServerSocketHandler(5001, routingTable);
+		Runnable brokerServerSocketHandler = new BrokerServerSocketHandler(routingTable, validateMessageHandler);
+		Runnable marketServerSocketHandler = new MarketServerSocketHandler(routingTable, validateMessageHandler);
 
 		new Thread(brokerServerSocketHandler).start();
 		new Thread(marketServerSocketHandler).start();

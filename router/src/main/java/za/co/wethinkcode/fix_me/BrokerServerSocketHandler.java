@@ -4,18 +4,21 @@ import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
 
-class ServerSocketHandler implements Runnable {
+class BrokerServerSocketHandler implements Runnable {
+	private int port = 5000;
 	private ServerSocket serverSocket;
 	private RoutingTable routingTable;
+	private AMessageResponsibility messageHandler;
 
-	ServerSocketHandler(int port, RoutingTable routingTable) {
+	BrokerServerSocketHandler(RoutingTable routingTable, AMessageResponsibility messageHandler) {
 		try {
-			this.serverSocket = new ServerSocket(port);
+			this.serverSocket = new ServerSocket(this.port);
 		} catch (IOException e) {
 			e.printStackTrace();
 			return;
 		}
 		this.routingTable = routingTable;
+		this.messageHandler = messageHandler;
 	}
 
 	public void run() {
@@ -27,19 +30,13 @@ class ServerSocketHandler implements Runnable {
 				try {
 					int socketId = this.routingTable.addRoute(socket);
 					Runnable socketHandler;
-					switch (socket.getLocalPort()) {
-					case 5000:
-						socketHandler = new BrokerSocketHandler(socket, this.routingTable, socketId);
-						new Thread(socketHandler).start();
-						break;
-					case 5001:
-						socketHandler = new MarketSocketHandler(socket, this.routingTable, socketId);
-						new Thread(socketHandler).start();
-					}
+					if (socket.getLocalPort() != this.port)
+						return;
+					socketHandler = new BrokerSocketHandler(socket, this.routingTable, socketId, this.messageHandler);
+					new Thread(socketHandler).start();
 				} catch (OutOfIDSpaceException e) {
 					e.printStackTrace();
 					socket.close();
-					return;
 				}
 			} catch (IOException e) {
 				e.printStackTrace();
