@@ -7,5 +7,5 @@ public abstract class AMessageResponsibility {
 		this.nextHandler = nextHandler;
 	}
 	
-	public abstract boolean handleRequest(FixMessage fixMessage); 
+	public abstract boolean handleRequest(FixMessage fixMessage);
 }

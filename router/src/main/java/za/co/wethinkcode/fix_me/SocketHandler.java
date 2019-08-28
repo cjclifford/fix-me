@@ -3,7 +3,7 @@ package za.co.wethinkcode.fix_me;
 import java.net.Socket;
 
 public class SocketHandler {
-	protected Socket socket;
+	protected synchronized Socket socket;
 	protected RoutingTable routingTable;
 	protected AMessageResponsibility messageHandler;
 	protected int socketId;

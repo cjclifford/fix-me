@@ -1,7 +1,5 @@
 package za.co.wethinkcode.fix_me;
 
-import java.io.DataOutputStream;
-import java.io.IOException;
 import java.net.Socket;
 import java.util.HashMap;
 import java.util.Map;
@@ -27,21 +25,12 @@ public class RoutingTable {
 		}
 		return this.nextId++;
 	}
+	
+	public Socket getRoute(int id) {
+		return this.routingTable.get(id);
+	}
 
 	public void removeRoute(int id) {
 		this.routingTable.remove(id);
-	}
-	
-	public boolean forward(int id, String message) {
-		Socket socket = this.routingTable.get(id);
-		try {
-			DataOutputStream sendTo = new DataOutputStream(socket.getOutputStream());
-			sendTo.writeBytes(message);
-			sendTo.close();
-		} catch (IOException e) {
-			e.printStackTrace();
-			return false;
-		}
-		return true;
 	}
 }

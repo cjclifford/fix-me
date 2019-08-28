@@ -17,7 +17,7 @@ public class Broker {
     		BufferedReader fromRouter = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
     		DataOutputStream toRouter = new DataOutputStream(clientSocket.getOutputStream());
     		
-    		int id = Integer.parseInt(fromRouter.readLine());
+    		String id = fromRouter.readLine();
     		
     		String message = "ID=" + id + "|DST=" + 100000;
     		try {    			

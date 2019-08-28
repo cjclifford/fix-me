@@ -25,17 +25,14 @@ public class MarketServerSocketHandler implements Runnable {
 		while (true) {
 			try {
 				Socket socket = this.serverSocket.accept();
-				socket.setSoTimeout(10 * 1000);
 				int socketId;
 				try {
 					socketId = this.routingTable.addRoute(socket);
 					Runnable socketHandler;
-					if (socket.getLocalPort() == this.port) {
-						if (socket.getLocalPort() != this.port)
-							return;
-						socketHandler = new MarketSocketHandler(socket, this.routingTable, socketId, this.messageHandler);
-						new Thread(socketHandler).start();
-					}
+					if (socket.getLocalPort() != this.port)
+						return;
+					socketHandler = new MarketSocketHandler(socket, this.routingTable, socketId, this.messageHandler);
+					new Thread(socketHandler).start();
 				} catch (OutOfIDSpaceException e) {
 					e.printStackTrace();
 					socket.close();
