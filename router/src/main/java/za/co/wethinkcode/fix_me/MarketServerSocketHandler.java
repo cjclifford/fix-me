@@ -2,41 +2,37 @@ package za.co.wethinkcode.fix_me;
 
 import java.io.IOException;
 import java.net.ServerSocket;
-import java.net.Socket;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 public class MarketServerSocketHandler implements Runnable {
-	final int port = 5001;
-	private ServerSocket serverSocket;
-	private RoutingTable routingTable;
+	private final int port = 5001;
 	private AMessageResponsibility messageHandler;
+	ServerSocket serverSocket;
 	
-	public MarketServerSocketHandler(RoutingTable routingTable, AMessageResponsibility messageHandler) {
-		try {			
-			this.serverSocket = new ServerSocket(this.port);
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
-		this.routingTable = routingTable;
+	MarketServerSocketHandler(AMessageResponsibility messageHandler) {
 		this.messageHandler = messageHandler;
 	}
 
+	@Override
 	public void run() {
-		System.out.println("Listening for markets...");
-		while (true) {
-			try {
-				Socket socket = this.serverSocket.accept();
-				int socketId;
+		System.out.println("Listening for Market connections...");
+		try {			
+			this.serverSocket = new ServerSocket(this.port);
+			ExecutorService executor = Executors.newFixedThreadPool(5);
+			while (true) {
 				try {
-					socketId = this.routingTable.addRoute(socket);
-					Runnable socketHandler;
-					if (socket.getLocalPort() != this.port)
-						return;
-					socketHandler = new MarketSocketHandler(socket, this.routingTable, socketId, this.messageHandler);
-					new Thread(socketHandler).start();
+					executor.execute(new MarketSocketHandler(serverSocket.accept(), messageHandler));
 				} catch (OutOfIDSpaceException e) {
 					e.printStackTrace();
-					socket.close();
 				}
+			}
+		} catch (IOException e) {
+			e.printStackTrace();
+		} finally {
+			try {
+				this.serverSocket.close();
+				System.out.println("Stopped listening for Market connections");
 			} catch (IOException e) {
 				e.printStackTrace();
 			}

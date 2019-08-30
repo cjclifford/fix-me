@@ -5,14 +5,9 @@ import java.io.IOException;
 import java.net.Socket;
 
 public class ForwardMessageHandler extends AMessageResponsibility {
-	private RoutingTable routingTable;
-
-	public ForwardMessageHandler(RoutingTable routingTable) {
-		this.routingTable = routingTable;
-	}
 	
 	public boolean handleRequest(FixMessage fixMessage) {
-		Socket socket = this.routingTable.getRoute(fixMessage.destinationId);
+		Socket socket = RoutingTable.getRoute(fixMessage.destinationId);
 		try {
 			DataOutputStream sendTo = new DataOutputStream(socket.getOutputStream());
 			sendTo.writeBytes(fixMessage.message);

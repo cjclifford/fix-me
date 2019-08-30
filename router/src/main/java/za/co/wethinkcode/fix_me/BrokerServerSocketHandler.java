@@ -2,42 +2,37 @@ package za.co.wethinkcode.fix_me;
 
 import java.io.IOException;
 import java.net.ServerSocket;
-import java.net.Socket;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 class BrokerServerSocketHandler implements Runnable {
-	private int port = 5000;
-	private ServerSocket serverSocket;
-	private RoutingTable routingTable;
+	private final int port = 5000;
 	private AMessageResponsibility messageHandler;
+	ServerSocket serverSocket;
 
-	BrokerServerSocketHandler(RoutingTable routingTable, AMessageResponsibility messageHandler) {
-		try {
-			this.serverSocket = new ServerSocket(this.port);
-		} catch (IOException e) {
-			e.printStackTrace();
-			return;
-		}
-		this.routingTable = routingTable;
+	BrokerServerSocketHandler(AMessageResponsibility messageHandler) {
 		this.messageHandler = messageHandler;
 	}
-
+	
+	@Override
 	public void run() {
-		System.out.println("Listening...");
-		while (true) {
-			try {
-				Socket socket = this.serverSocket.accept();
-				socket.setSoTimeout(10 * 1000);
-				try {
-					int socketId = this.routingTable.addRoute(socket);
-					Runnable socketHandler;
-					if (socket.getLocalPort() != this.port)
-						return;
-					socketHandler = new BrokerSocketHandler(socket, this.routingTable, socketId, this.messageHandler);
-					new Thread(socketHandler).start();
+		System.out.println("Listening for Broker connections...");
+		try {
+			this.serverSocket = new ServerSocket(this.port);
+			ExecutorService executor = Executors.newFixedThreadPool(5);
+			while (true) {
+				try {					
+					executor.execute(new BrokerSocketHandler(serverSocket.accept(), messageHandler));
 				} catch (OutOfIDSpaceException e) {
 					e.printStackTrace();
-					socket.close();
 				}
+			}
+		} catch (IOException e) {
+			e.printStackTrace();
+		} finally {
+			try {
+				this.serverSocket.close();
+				System.out.println("Stopped listening for Broker connections");
 			} catch (IOException e) {
 				e.printStackTrace();
 			}

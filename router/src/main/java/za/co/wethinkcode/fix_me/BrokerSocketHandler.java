@@ -5,31 +5,38 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.Socket;
-import java.net.SocketException;
-import java.net.SocketTimeoutException;
-import java.util.Map;
-import java.util.HashMap;
 
 public class BrokerSocketHandler extends SocketHandler implements Runnable {
-	private AMessageResponsibility messageHandler;
 	
-	BrokerSocketHandler(Socket socket, RoutingTable routingTable, int socketId, AMessageResponsibility messageHandler) {
-		super(socket, routingTable, socketId);
-		this.messageHandler = messageHandler;
+	BrokerSocketHandler(Socket socket, AMessageResponsibility messageHandler) throws OutOfIDSpaceException {
+		super(socket, messageHandler);
 	}
 
+	@Override
 	public void run() {
-		System.out.println("Socket connection through port: " + this.socket.getLocalPort());
+		System.out.println("Broker(" + this.socketId + ") connected");
 		try {
+			// get I/O for socket connection
 			BufferedReader fromBroker = new BufferedReader(new InputStreamReader(this.socket.getInputStream()));
 			DataOutputStream toBroker = new DataOutputStream(this.socket.getOutputStream());
-			toBroker.writeBytes(Integer.toString(this.socketId) + '\n');
-			System.out.println("Connected to broker");
+
+			// send ID to client
+			System.out.println("Sending ID to broker...");
+			toBroker.writeBytes(this.socketId + '\n');
+			// listen for client message
 			System.out.println("Waiting for broker message...");
+			// validate message --> determine destination --> forwared message
+//			this.messageHandler.handleRequest(new FixMessage(fromBroker.readLine()));
+			// get message from Broker
 			String message = fromBroker.readLine();
-			System.out.println("Broker message: " + message);
-			FixMessage fixMessage = new FixMessage(message);
-			this.messageHandler.handleRequest(fixMessage);
+			System.out.println("Message from Broker:" + message);
+			// determine destination
+			String destinationId = message.split("\\|")[1].split("=")[1];
+			System.out.println("Destination ID: " + destinationId);
+			// forward message
+			Socket destinationSocket = RoutingTable.getRoute(destinationId);
+			DataOutputStream toDestination = new DataOutputStream(destinationSocket.getOutputStream());
+			toDestination.writeBytes(message + '\n');
 		} catch (IOException e) {
 			e.printStackTrace();
 		}

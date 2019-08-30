@@ -3,14 +3,13 @@ package za.co.wethinkcode.fix_me;
 import java.net.Socket;
 
 public class SocketHandler {
-	protected synchronized Socket socket;
-	protected RoutingTable routingTable;
+	protected Socket socket;
 	protected AMessageResponsibility messageHandler;
-	protected int socketId;
+	protected String socketId;
 	
-	SocketHandler(Socket socket, RoutingTable routingTable, int socketId) {
+	SocketHandler(Socket socket, AMessageResponsibility messageHandler) throws OutOfIDSpaceException {
 		this.socket = socket;
-		this.routingTable = routingTable;
-		this.socketId = socketId;
+		this.socketId = RoutingTable.addRoute(this.socket);
+		this.messageHandler = messageHandler;
 	}
 }

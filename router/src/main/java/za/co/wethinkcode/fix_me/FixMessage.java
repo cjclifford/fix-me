@@ -5,14 +5,14 @@ import java.util.HashMap;
 
 public class FixMessage {
 	public String message;
-	public int destinationId;
+	public String destinationId;
 	public Map<String, String> tags;
 	
 	public FixMessage(String message) {
 		this.message = message;
 		this.tags = this.parseMessage(this.message);
 		try {			
-			this.destinationId = Integer.parseInt(this.tags.get("DST"));
+			this.destinationId = this.tags.get("DST");
 		} catch (NumberFormatException e) {
 			e.printStackTrace();
 		}
