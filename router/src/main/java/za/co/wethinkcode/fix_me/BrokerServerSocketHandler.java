@@ -7,13 +7,8 @@ import java.util.concurrent.Executors;
 
 class BrokerServerSocketHandler implements Runnable {
 	private final int port = 5000;
-	private AMessageResponsibility messageHandler;
 	ServerSocket serverSocket;
 
-	BrokerServerSocketHandler(AMessageResponsibility messageHandler) {
-		this.messageHandler = messageHandler;
-	}
-	
 	@Override
 	public void run() {
 		System.out.println("Listening for Broker connections...");
@@ -21,8 +16,8 @@ class BrokerServerSocketHandler implements Runnable {
 			this.serverSocket = new ServerSocket(this.port);
 			ExecutorService executor = Executors.newFixedThreadPool(5);
 			while (true) {
-				try {					
-					executor.execute(new BrokerSocketHandler(serverSocket.accept(), messageHandler));
+				try {
+					executor.execute(new BrokerSocketHandler(serverSocket.accept()));
 				} catch (OutOfIDSpaceException e) {
 					e.printStackTrace();
 				}

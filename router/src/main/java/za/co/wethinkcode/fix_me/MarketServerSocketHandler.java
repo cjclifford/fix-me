@@ -7,13 +7,8 @@ import java.util.concurrent.Executors;
 
 public class MarketServerSocketHandler implements Runnable {
 	private final int port = 5001;
-	private AMessageResponsibility messageHandler;
 	ServerSocket serverSocket;
 	
-	MarketServerSocketHandler(AMessageResponsibility messageHandler) {
-		this.messageHandler = messageHandler;
-	}
-
 	@Override
 	public void run() {
 		System.out.println("Listening for Market connections...");
@@ -22,7 +17,7 @@ public class MarketServerSocketHandler implements Runnable {
 			ExecutorService executor = Executors.newFixedThreadPool(5);
 			while (true) {
 				try {
-					executor.execute(new MarketSocketHandler(serverSocket.accept(), messageHandler));
+					executor.execute(new MarketSocketHandler(serverSocket.accept()));
 				} catch (OutOfIDSpaceException e) {
 					e.printStackTrace();
 				}

@@ -1,6 +1,7 @@
 package za.co.wethinkcode.fix_me;
 
 import java.net.Socket;
+import java.util.Map;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.io.DataOutputStream;
@@ -8,8 +9,8 @@ import java.io.IOException;
 
 public class MarketSocketHandler extends SocketHandler implements Runnable {
 
-	MarketSocketHandler(Socket socket, AMessageResponsibility messageHandler) throws OutOfIDSpaceException{
-		super(socket, messageHandler);
+	MarketSocketHandler(Socket socket) throws OutOfIDSpaceException{
+		super(socket);
 	}
 
 	@Override
@@ -23,36 +24,38 @@ public class MarketSocketHandler extends SocketHandler implements Runnable {
 			// send ID to client
 			System.out.println("Sending ID to market...");
 			toMarket.writeBytes(this.socketId + '\n');
+			
 			// listen for client messages
 			while (!this.socket.isClosed()) {
 				System.out.println("Waiting for market message...");
-				// validate message --> determine destination --> forward message
-//				this.messageHandler.handleRequest(new FixMessage(fromMarket.readLine()));
+				
 				// get message from Market
 				String message = fromMarket.readLine();
 				System.out.println("Message from Market: " + message);
+				
+				// validate checksum
+				if (!this.validateMessageChecksum(message)) {
+					this.closeSocket();
+					toMarket.writeBytes("Bad checksum\n");
+					return;
+				}
+				
+				Map<String, String> messageData = this.extractMessageData(message);
+				
 				// determine destination
-				String destinationId = message.split("\\|")[2].split("=")[1];
+				String destinationId = messageData.get("DST");
 				System.out.println("Destination ID: " + destinationId);
+				
 				// forward message
 				Socket destinationSocket = RoutingTable.getRoute(destinationId);
 				DataOutputStream toDestination = new DataOutputStream(destinationSocket.getOutputStream());
 				toDestination.writeBytes(message + '\n');
-				// close Broker socket
-				destinationSocket.close();
-				RoutingTable.removeRoute(destinationId);
-				System.out.println("Broker disconnected");
 			}
 		} catch (IOException e) {
 			e.printStackTrace();
 		} finally {
-			try {
-				this.socket.close();
-				RoutingTable.removeRoute(this.socketId);
-				System.out.println("Market(" + this.socketId + ") disconnected");
-			} catch (IOException e) {
-				e.printStackTrace();
-			}
+			this.closeSocket();
+			System.out.println("Market(" + this.socketId + ") disconected");
 		}
 	}
 }

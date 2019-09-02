@@ -40,7 +40,6 @@ public class Broker {
     		}
     		fromRouter.close();
     		clientSocket.close();
-    		clientSocket.close();
     		System.out.println("Disconnected from Router");
     	} catch (IOException e) {
     		System.out.println(e);

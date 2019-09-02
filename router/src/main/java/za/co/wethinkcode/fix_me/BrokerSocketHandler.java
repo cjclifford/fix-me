@@ -5,11 +5,12 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.Socket;
+import java.util.Map;
 
 public class BrokerSocketHandler extends SocketHandler implements Runnable {
-	
-	BrokerSocketHandler(Socket socket, AMessageResponsibility messageHandler) throws OutOfIDSpaceException {
-		super(socket, messageHandler);
+
+	BrokerSocketHandler(Socket socket) throws OutOfIDSpaceException {
+		super(socket);
 	}
 
 	@Override
@@ -23,16 +24,24 @@ public class BrokerSocketHandler extends SocketHandler implements Runnable {
 			// send ID to client
 			System.out.println("Sending ID to broker...");
 			toBroker.writeBytes(this.socketId + '\n');
-			// listen for client message
-			System.out.println("Waiting for broker message...");
-			// validate message --> determine destination --> forwared message
-//			this.messageHandler.handleRequest(new FixMessage(fromBroker.readLine()));
+
 			// get message from Broker
 			String message = fromBroker.readLine();
 			System.out.println("Message from Broker:" + message);
+
+			Map<String, String> messageData = this.extractMessageData(message);
+
+			// validate checksum
+			if (!this.validateMessageChecksum(message)) {
+				this.closeSocket();
+				toBroker.writeBytes("Bad checksum\n");
+				return;
+			}
+
 			// determine destination
-			String destinationId = message.split("\\|")[1].split("=")[1];
+			String destinationId = messageData.get("DST");
 			System.out.println("Destination ID: " + destinationId);
+
 			// forward message
 			Socket destinationSocket = RoutingTable.getRoute(destinationId);
 			DataOutputStream toDestination = new DataOutputStream(destinationSocket.getOutputStream());
