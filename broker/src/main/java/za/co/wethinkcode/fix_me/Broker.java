@@ -10,7 +10,7 @@ import java.io.IOException;
 import java.math.BigInteger;
 
 public class Broker {
-    public static void main( String[] args ) {
+	public void run(String destinationId, String messageType, String instrument, String amount, String price) {
     	try {
     		System.out.println("Attempting connection to Router...");
     		Socket clientSocket = new Socket("127.0.0.1", 5000);
@@ -21,17 +21,20 @@ public class Broker {
     		String id = fromRouter.readLine();
     		System.out.println("ID: " + id);
     		
-    		String message = "ID=" + id + "|DST=" + args[0];
+    		String message = "ID=" + id + "|DST=" + destinationId + "|TYP=" + messageType + "|IST=" + instrument + "|AMT=" + amount +"|PRC=" + price;
     		try {
     			// generate checksum
     			MessageDigest md = MessageDigest.getInstance("MD5");
     			md.update(message.getBytes());
     			String checksum = new BigInteger(1, md.digest()).toString(16);
+    			
     			// append checksum to message
     			message += "|CHK=" + checksum;
+    			
     			// send message
     			System.out.println("Sending message: " + message);
     			toRouter.writeBytes(message + '\n');
+    			
     			// get response from router
     			String response = fromRouter.readLine();
     			System.out.println("Response: " + response);
