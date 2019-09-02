@@ -9,10 +9,14 @@ public class Router {
 	public static Map<String, Integer> routingTable = Collections.synchronizedMap(new HashMap<String, Integer>());
 
 	public static void main(String[] args) {
-		RoutingTable routingTable = new RoutingTable();
+		ValidateMessageHandler validateMessageHandler = new ValidateMessageHandler();
+		GetMessageDestinationHandler getMessageDestinationHandler = new GetMessageDestinationHandler();
+		ForwardMessageHandler forwardMessageHandler = new ForwardMessageHandler();
+		validateMessageHandler.setNextHandler(getMessageDestinationHandler);
+		getMessageDestinationHandler.setNextHandler(forwardMessageHandler);
 
-		Runnable brokerServerSocketHandler = new ServerSocketHandler(5000, routingTable);
-		Runnable marketServerSocketHandler = new ServerSocketHandler(5001, routingTable);
+		Runnable brokerServerSocketHandler = new BrokerServerSocketHandler(validateMessageHandler);
+		Runnable marketServerSocketHandler = new MarketServerSocketHandler(validateMessageHandler);
 
 		new Thread(brokerServerSocketHandler).start();
 		new Thread(marketServerSocketHandler).start();

@@ -5,67 +5,40 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.Socket;
-import java.net.SocketException;
-import java.net.SocketTimeoutException;
-import java.util.Map;
-import java.util.HashMap;
 
 public class BrokerSocketHandler extends SocketHandler implements Runnable {
-	BrokerSocketHandler(Socket socket, RoutingTable routingTable, int socketId) {
-		super(socket, routingTable, socketId);
-	}
-
-	private Socket forwardMessage(String message) {
-		String[] tags = message.split("\\|");
-		Map<String, String> tagMap = new HashMap<String, String>();
-
-		System.out.println("Extracting tags...");
-		for (String tag : tags) {
-			System.out.println(tag);
-			String[] tagKV = tag.split("=");
-			tagMap.put(tagKV[0], tagKV[1]);
-		}
-		
-		try {			
-			int marketId = Integer.parseInt(tagMap.get("MKT"));
-			return this.routingTable.forward(marketId, message);
-		} catch (NumberFormatException e) {
-			return null;
-		}
-	}
 	
+	BrokerSocketHandler(Socket socket, AMessageResponsibility messageHandler) throws OutOfIDSpaceException {
+		super(socket, messageHandler);
+	}
+
+	@Override
 	public void run() {
-		System.out.println("Socket connection through port: " + this.socket.getLocalPort());
+		System.out.println("Broker(" + this.socketId + ") connected");
 		try {
+			// get I/O for socket connection
 			BufferedReader fromBroker = new BufferedReader(new InputStreamReader(this.socket.getInputStream()));
 			DataOutputStream toBroker = new DataOutputStream(this.socket.getOutputStream());
-			toBroker.writeBytes(Integer.toString(this.socketId) + '\n');
-			System.out.println("Connected to broker");
+
+			// send ID to client
+			System.out.println("Sending ID to broker...");
+			toBroker.writeBytes(this.socketId + '\n');
+			// listen for client message
 			System.out.println("Waiting for broker message...");
+			// validate message --> determine destination --> forwared message
+//			this.messageHandler.handleRequest(new FixMessage(fromBroker.readLine()));
+			// get message from Broker
 			String message = fromBroker.readLine();
-			System.out.println("Broker message: " + message);
-			if (this.validateChecksum(message)) {
-				Socket market = this.forwardMessage(message);
-				if (market == null)
-					return;
-				try {
-					BufferedReader fromMarket = new BufferedReader(new InputStreamReader(market.getInputStream()));
-					String response = fromMarket.readLine();
-					if (!this.validateChecksum(response))
-						return;
-					toBroker.writeBytes(response);
-				} catch (IOException e) {
-					e.printStackTrace();
-				}
-			}
-		} catch (SocketException e) {
-			this.closeSocket();
-		} catch (SocketTimeoutException e) {
-			this.closeSocket();
+			System.out.println("Message from Broker:" + message);
+			// determine destination
+			String destinationId = message.split("\\|")[1].split("=")[1];
+			System.out.println("Destination ID: " + destinationId);
+			// forward message
+			Socket destinationSocket = RoutingTable.getRoute(destinationId);
+			DataOutputStream toDestination = new DataOutputStream(destinationSocket.getOutputStream());
+			toDestination.writeBytes(message + '\n');
 		} catch (IOException e) {
 			e.printStackTrace();
-		} finally {
-			this.closeSocket();
 		}
 	}
 }
