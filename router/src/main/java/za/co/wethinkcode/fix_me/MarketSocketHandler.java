@@ -22,12 +22,10 @@ public class MarketSocketHandler extends SocketHandler implements Runnable {
 			DataOutputStream toMarket = new DataOutputStream(this.socket.getOutputStream());
 
 			// send ID to client
-			System.out.println("Sending ID to market...");
 			toMarket.writeBytes(this.socketId + '\n');
 			
 			// listen for client messages
 			while (!this.socket.isClosed()) {
-				System.out.println("Waiting for market message...");
 				
 				// get message from Market
 				String message = fromMarket.readLine();
@@ -44,7 +42,6 @@ public class MarketSocketHandler extends SocketHandler implements Runnable {
 				
 				// determine destination
 				String destinationId = messageData.get("DST");
-				System.out.println("Destination ID: " + destinationId);
 				
 				// forward message
 				Socket destinationSocket = RoutingTable.getRoute(destinationId);

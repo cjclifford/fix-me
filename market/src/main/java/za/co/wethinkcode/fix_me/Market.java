@@ -18,7 +18,7 @@ public class Market {
 		Map<String, Float> instruments = new HashMap<String, Float>();
 
 		// add some mock instruments
-		instruments.put("H", new Float(10.0));
+		instruments.put("H", Float.valueOf(10.0f));
 		try {
 
 			System.out.println("Attempting connection to Router...");
@@ -44,7 +44,6 @@ public class Market {
 
 					// determine ID
 					String destinationId = messageData.get("ID");
-					System.out.println("Destination ID: " + destinationId);
 
 					boolean success = false;
 

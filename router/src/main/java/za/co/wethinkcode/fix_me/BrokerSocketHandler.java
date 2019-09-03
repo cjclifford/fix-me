@@ -22,7 +22,6 @@ public class BrokerSocketHandler extends SocketHandler implements Runnable {
 			DataOutputStream toBroker = new DataOutputStream(this.socket.getOutputStream());
 
 			// send ID to client
-			System.out.println("Sending ID to broker...");
 			toBroker.writeBytes(this.socketId + '\n');
 
 			// get message from Broker
@@ -40,7 +39,6 @@ public class BrokerSocketHandler extends SocketHandler implements Runnable {
 
 			// determine destination
 			String destinationId = messageData.get("DST");
-			System.out.println("Destination ID: " + destinationId);
 
 			// forward message
 			Socket destinationSocket = RoutingTable.getRoute(destinationId);
