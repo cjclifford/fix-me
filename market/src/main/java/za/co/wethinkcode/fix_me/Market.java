@@ -63,7 +63,7 @@ public class Market {
 					}
 
 					// generate response
-					String response = "ID=" + id + "|RES=" + (success ? "Accepted" : "Rejected") + "|DST="
+					String response = "ID=" + id + "|RES=" + (success ? "Executed" : "Rejected") + "|DST="
 							+ destinationId;
 
 					// generate checksum
